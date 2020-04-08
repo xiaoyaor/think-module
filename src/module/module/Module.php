@@ -1,6 +1,6 @@
 <?php
 
-namespace think\module\addons;
+namespace think\module\module;
 
 use app\BaseController;
 use app\common\library\Auth;
@@ -27,7 +27,7 @@ class Module
     // 视图路径
     protected $path;
     // 视图模型
-    protected $addonsview;
+    protected $moduleview;
     // 插件配置
     protected $addon_config;
     // 插件信息
@@ -48,7 +48,7 @@ class Module
         $this->app = $app;
         $this->request = $app->request;
         $this->name = $this->getName();
-        $this->addon_path = $app->getRootPath() . 'addons'. DIRECTORY_SEPARATOR . $this->name . DIRECTORY_SEPARATOR;
+        $this->addon_path = $app->getRootPath() . 'module'. DIRECTORY_SEPARATOR . $this->name . DIRECTORY_SEPARATOR;
         $this->addon_config = "addon_{$this->name}_config";
         $this->addon_info = "addon_{$this->name}_info";
 
@@ -75,12 +75,12 @@ class Module
         //    $this->path=ADDON_PATH . $this->name . DIRECTORY_SEPARATOR  ;
         //}
         ///$path=ADDON_PATH . $this->name . DIRECTORY_SEPARATOR . 'view' . DIRECTORY_SEPARATOR ;
-        //$path='E:\WebSite\Tools\web\php\phpStudy\PHPTutorial\WWW\develop\Tools\001\Tools\001\htdocs\EasyAdmin\addons\app_demo\app\admin\view\\';
+        //$path='E:\WebSite\Tools\web\php\phpStudy\PHPTutorial\WWW\develop\Tools\001\Tools\001\htdocs\EasyAdmin\module\app_demo\app\admin\view\\';
          //重置配置
         //Config::set(['view_path'=>$this->path],'view');
-        $this->addonsview = clone View::engine('Think');
-        //$this->addonsview->layout(false);
-        $this->addonsview->config([
+        $this->moduleview = clone View::engine('Think');
+        //$this->moduleview->layout(false);
+        $this->moduleview->config([
             'view_path' =>$this->path
         ]);
 
@@ -101,13 +101,13 @@ class Module
 //
 //        // 设置替换字符串
 //        $cdnurl = Config::get('site.cdnurl');
-//        $this->view->replace('__ADDON__', $cdnurl . "/assets/addons/" . $this->addon);
+//        $this->view->replace('__ADDON__', $cdnurl . "/assets/module/" . $this->addon);
 //
 //        $this->auth = Auth::instance();
 //        // token
 //        $token = $this->request->server('HTTP_TOKEN', $this->request->request('token', \think\Cookie::get('token')));
 //
-//        $path = 'addons/' . $this->addon . '/' . str_replace('.', '/', $this->controller) . '/' . $this->action;
+//        $path = 'module/' . $this->addon . '/' . str_replace('.', '/', $this->controller) . '/' . $this->action;
 //        // 设置当前请求的URI
 //        $this->auth->setRequestUri($path);
 //        // 检测是否需要验证登录
@@ -187,10 +187,10 @@ class Module
     public function fetch($template = '', $vars = [])
     {
         array_merge($this->data,$vars);
-        $this->addonsview->config([
+        $this->moduleview->config([
             'view_path' =>$this->path
         ]);
-        return $this->addonsview->fetch($template, $this->data);
+        return $this->moduleview->fetch($template, $this->data);
     }
 
     /**
@@ -199,7 +199,7 @@ class Module
      */
     public function getDefaultDriver()
     {
-        return $this->getConfig('addons');
+        return $this->getConfig('module');
     }
 
     /**
@@ -255,10 +255,10 @@ class Module
         // 文件属性
         $info = $this->info ?? [];
         // 文件配置
-        $info_file = addons_type($this->addon_path);
+        $info_file = module_type($this->addon_path);
         if (is_file($info_file)) {
             $_info = parse_ini_file($info_file, true, INI_SCANNER_TYPED) ?: [];
-            $_info['url'] = addons_url();
+            $_info['url'] = module_url();
             $info = array_merge($_info, $info);
         }
         Config::set($info, $this->addon_info);
@@ -389,7 +389,7 @@ class Module
      */
     public function display($content = '}', $vars = [])
     {
-        return $this->addonsview->display($content, $vars);
+        return $this->moduleview->display($content, $vars);
     }
 
 
@@ -401,7 +401,7 @@ class Module
      */
     public function engine($engine)
     {
-        $this->addonsview->engine($engine);
+        $this->moduleview->engine($engine);
 
         return $this;
     }

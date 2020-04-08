@@ -3,7 +3,7 @@
  * +----------------------------------------------------------------------
  * | think-module [thinkphp6]
  * +----------------------------------------------------------------------
- *  .--,       .--,             | FILE: Addons.php
+ *  .--,       .--,             | FILE: Module.php
  * ( (  \.---./  ) )            | AUTHOR: byron
  *  '.__/o   o\__.'             | EMAIL: xiaobo.sun@qq.com
  *     {=  ^  =}                | QQ: 150093589
@@ -20,7 +20,7 @@
  */
 declare(strict_types=1);
 
-namespace think\module\addons;
+namespace think\module\module;
 
 use app\BaseController;
 use think\App;
@@ -30,7 +30,7 @@ use think\facade\View;
 
 /**
  * 插件基类控制器
- * @package think\backendaddons
+ * @package think\backendmodule
  */
 class BackendModule
 {
@@ -59,7 +59,7 @@ class BackendModule
 
     /**
      * 插件构造函数
-     * Addons constructor.
+     * Module constructor.
      * @param \think\App $app
      */
     public function __construct(App $app)
@@ -67,7 +67,7 @@ class BackendModule
         $this->app = $app;
         $this->request = $app->request;
         $this->name = $this->getName();
-        $this->addon_path = $app->getRootPath() . 'addons'. DIRECTORY_SEPARATOR . $this->name . DIRECTORY_SEPARATOR;
+        $this->addon_path = $app->getRootPath() . 'module'. DIRECTORY_SEPARATOR . $this->name . DIRECTORY_SEPARATOR;
         $this->addon_config = "addon_{$this->name}_config";
         $this->addon_info = "addon_{$this->name}_info";
 
@@ -78,7 +78,7 @@ class BackendModule
             $module='admin';
             //$controller=array_key_exists('2',$filter)?$filter[2]:'index';
             //$action=array_key_exists('3',$filter)?$filter[3]:'index';
-            $this->path = $app->getRootPath() . 'addons'. DIRECTORY_SEPARATOR . $addon. DIRECTORY_SEPARATOR. 'app' . DIRECTORY_SEPARATOR .$module . DIRECTORY_SEPARATOR. 'view' . DIRECTORY_SEPARATOR ;
+            $this->path = $app->getRootPath() . 'module'. DIRECTORY_SEPARATOR . $addon. DIRECTORY_SEPARATOR. 'app' . DIRECTORY_SEPARATOR .$module . DIRECTORY_SEPARATOR. 'view' . DIRECTORY_SEPARATOR ;
 
         //}
 
@@ -145,7 +145,7 @@ class BackendModule
      */
     public function getDefaultDriver()
     {
-        return $this->getConfig('addons');
+        return $this->getConfig('module');
     }
 
     /**
@@ -201,10 +201,10 @@ class BackendModule
         // 文件属性
         $info = $this->info ?? [];
         // 文件配置
-        $info_file = addons_type($this->addon_path);
+        $info_file = module_type($this->addon_path);
         if (is_file($info_file)) {
             $_info = parse_ini_file($info_file, true, INI_SCANNER_TYPED) ?: [];
-            $_info['url'] = addons_url();
+            $_info['url'] = module_url();
             $info = array_merge($_info, $info);
         }
         Config::set($info, $this->addon_info);

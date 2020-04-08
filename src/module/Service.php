@@ -45,9 +45,9 @@ class Service extends \think\Service
     public function register()
     {
         // 插件目录
-        define('ADDON_PATH', root_path() . 'addons' . DIRECTORY_SEPARATOR);
-        // 无则创建addons目录
-        $this->module_path = $this->getAddonsPath();
+        define('ADDON_PATH', root_path() . 'module' . DIRECTORY_SEPARATOR);
+        // 无则创建module目录
+        $this->module_path = $this->getModulePath();
         // 加载系统语言包
         Lang::load([
             $this->app->getRootPath() . '/vendor/xiaoyaor/think-module/src/lang/zh-cn.php'
@@ -70,16 +70,16 @@ class Service extends \think\Service
         //注册插件路由
         $this->registerRoutes(function (Route $route) {
             // 插件路由
-            $execute = '\\think\\addons\\Route::execute';
-            $route->rule(Config::get('easyadmin.addons_url_prefix')."/:addon/[:controller]/[:action]", $execute)
-                ->middleware(Addons::class);
+            $execute = '\\think\\module\\Route::execute';
+            $route->rule(Config::get('easyadmin.module_url_prefix')."/:addon/[:controller]/[:action]", $execute)
+                ->middleware(Module::class);
         });
         //注册应用路由
         $this->registerRoutes(function (Route $route) {
             // 应用路由
-            $execute = '\\think\\addons\\AppRoute::execute';
+            $execute = '\\think\\module\\AppRoute::execute';
             $route->rule(Config::get('easyadmin.app_url_prefix')."/:addon/[:module]/[:controller]/[:action]", $execute)
-                ->middleware(Addons::class);
+                ->middleware(Module::class);
         });
         //批量注册应用后台路由
         $this->registerRoutes(function (Route $route) {
@@ -87,7 +87,7 @@ class Service extends \think\Service
             $execute = '\\think\\module\\BackendRoute::execute';
             foreach ($this->data as $key=>$value){
                 $route->rule($value."/[:controller]/[:action]", $execute)
-                    ->middleware(Addons::class);
+                    ->middleware(Module::class);
             }
         });
         //注册应用模块路由
@@ -95,7 +95,7 @@ class Service extends \think\Service
             // 应用路由
             $execute = '\\think\\module\\MouduleAppRoute::execute';
             $route->rule(Config::get('easyadmin.app_url_prefix')."/:addon/module/:app/[:module]/[:controller]/[:action]", $execute)
-                ->middleware(Addons::class);
+                ->middleware(Module::class);
         });
         //批量注册应用模块后台路由
         $this->registerRoutes(function (Route $route) {
@@ -103,22 +103,22 @@ class Service extends \think\Service
             $execute = '\\think\\module\\MouduleBackendRoute::execute';
             foreach ($this->data as $key=>$value){
                 $route->rule($value."/[:controller]/[:action]", $execute)
-                    ->middleware(Addons::class);
+                    ->middleware(Module::class);
             }
         });
         //注册自定义路由
-        self::addons_route();
+        self::module_route();
     }
 
     /**
      * 自定义路由
      * @return string
      */
-    private function addons_route()
+    private function module_route()
     {
         $this->registerRoutes(function (Route $route) {
             // 自定义路由
-            $routes = (array) Config::get('addons.route', []);
+            $routes = (array) Config::get('module.route', []);
             // 应用路由
             $execute = '\\think\\module\\AppRoute::execute';
             foreach ($routes as $key => $val) {
@@ -168,7 +168,7 @@ class Service extends \think\Service
     {
         $hooks = $this->app->isDebug() ? [] : Cache::get('hooks', []);
         if (empty($hooks)) {
-            $hooks = (array) Config::get('addons.hooks', []);
+            $hooks = (array) Config::get('module.hooks', []);
             // 初始化钩子
             foreach ($hooks as $key => $values) {
                 if (is_string($values)) {
@@ -177,15 +177,15 @@ class Service extends \think\Service
                     $values = (array) $values;
                 }
                 $hooks[$key] = array_filter(array_map(function ($v) use ($key) {
-                    return [get_addons_class($v), Str::camel($key)];
+                    return [get_module_class($v), Str::camel($key)];
                 }, $values));
             }
             Cache::set('hooks', $hooks);
         }
-        //如果在插件中有定义 AddonsInit，则直接执行
-        if (isset($hooks['AddonsInit'])) {
-            foreach ($hooks['AddonsInit'] as $k => $v) {
-                Event::trigger('AddonsInit', $v);
+        //如果在插件中有定义 ModuleInit，则直接执行
+        if (isset($hooks['ModuleInit'])) {
+            foreach ($hooks['ModuleInit'] as $k => $v) {
+                Event::trigger('ModuleInit', $v);
             }
         }
         Event::listenEvents($hooks);
@@ -231,22 +231,22 @@ class Service extends \think\Service
     private function autoload()
     {
         // 是否处理自动载入
-        if (!Config::get('addons.autoload', true)) {
+        if (!Config::get('module.autoload', true)) {
             return true;
         }
-        $config = Config::get('addons');
+        $config = Config::get('module');
         // 读取插件目录及钩子列表
-        $base = get_class_methods("\\think\\Addons");
+        $base = get_class_methods("\\think\\Module");
         // 读取插件目录中的php文件
-        foreach (glob($this->getAddonsPath() . '*/*.php') as $addons_file) {
+        foreach (glob($this->getModulePath() . '*/*.php') as $module_file) {
             // 格式化路径信息
-            $info = pathinfo($addons_file);
+            $info = pathinfo($module_file);
             // 获取插件目录名
             $name = str::studly(pathinfo($info['dirname'], PATHINFO_FILENAME));
             // 找到插件入口文件
             if (strtolower($info['filename']) === strtolower($name)) {
                 //插件关闭后不加载事件
-                $ini_file = addons_type($info['dirname'].DIRECTORY_SEPARATOR);
+                $ini_file = module_type($info['dirname'].DIRECTORY_SEPARATOR);
                 if (!is_file($ini_file)) {
                     continue;
                 }
@@ -255,16 +255,16 @@ class Service extends \think\Service
                     continue;
                 }
                 //读取开启的应用列表
-                if (addons_type($info['dirname'].DIRECTORY_SEPARATOR,false)=='app'||addons_type($info['dirname'].DIRECTORY_SEPARATOR,false)=='addon') {
+                if (module_type($info['dirname'].DIRECTORY_SEPARATOR,false)=='app'||module_type($info['dirname'].DIRECTORY_SEPARATOR,false)=='addon') {
                     $this->data[]=$iniinfo['name'];
                 }
                 // 读取出所有公共方法
 //                if (strpos($iniinfo['name'],'_')!==false){
-//                    $methods = (array)get_class_methods("\\addons\\" . $iniinfo['name'] . "\\" . $info['filename']);
+//                    $methods = (array)get_class_methods("\\module\\" . $iniinfo['name'] . "\\" . $info['filename']);
 //                }else{
-//                    $methods = (array)get_class_methods("\\addons\\" . $name . "\\" . $info['filename']);
+//                    $methods = (array)get_class_methods("\\module\\" . $name . "\\" . $info['filename']);
 //                }
-                $methods = (array)get_class_methods("\\addons\\" . $iniinfo['name'] . "\\" . $info['filename']);
+                $methods = (array)get_class_methods("\\module\\" . $iniinfo['name'] . "\\" . $info['filename']);
 
                 // 跟插件基类方法做比对，得到差异结果
                 $hooks = array_diff($methods, $base);
@@ -283,17 +283,17 @@ class Service extends \think\Service
                 }
             }
         }
-        Config::set($config, 'addons');
+        Config::set($config, 'module');
     }
 
     /**
-     * 获取 addons 路径
+     * 获取 module 路径
      * @return string
      */
-    public function getAddonsPath()
+    public function getModulePath()
     {
         // 初始化插件目录
-        $module_path = $this->app->getRootPath() . 'addons' . DIRECTORY_SEPARATOR;
+        $module_path = $this->app->getRootPath() . 'module' . DIRECTORY_SEPARATOR;
         // 如果插件目录不存在则创建
         if (!is_dir($module_path)) {
             @mkdir($module_path, 0755, true);
@@ -307,10 +307,10 @@ class Service extends \think\Service
      * @param string $name
      * @return array
      */
-    public function getAddonsConfig()
+    public function getModuleConfig()
     {
         $name = $this->app->request->addon;
-        $addon = get_addons_instance($name);
+        $addon = get_module_instance($name);
         if (!$addon) {
             return [];
         }
@@ -329,7 +329,7 @@ class Service extends \think\Service
      */
     public static function download($name, $extend = [])
     {
-        $addonTmpDir = runtime_path() . 'addons' . DIRECTORY_SEPARATOR;
+        $addonTmpDir = runtime_path() . 'module' . DIRECTORY_SEPARATOR;
         if (!is_dir($addonTmpDir)) {
             @mkdir($addonTmpDir, 0755, true);
         }
@@ -379,7 +379,7 @@ class Service extends \think\Service
      */
     public static function unzip($name)
     {
-        $file = RUNTIME_PATH() . 'addons' . DIRECTORY_SEPARATOR . $name . '.zip';
+        $file = RUNTIME_PATH() . 'module' . DIRECTORY_SEPARATOR . $name . '.zip';
         $dir = ADDON_PATH . $name . DIRECTORY_SEPARATOR;
         if (class_exists('ZipArchive')) {
             $zip = new ZipArchive;
@@ -404,7 +404,7 @@ class Service extends \think\Service
      */
     public static function backup($name)
     {
-        $file = RUNTIME_PATH() . 'addons' . DIRECTORY_SEPARATOR . $name . '-backup-' . date("YmdHis") . '.zip';
+        $file = RUNTIME_PATH() . 'module' . DIRECTORY_SEPARATOR . $name . '-backup-' . date("YmdHis") . '.zip';
         $dir = ADDON_PATH . $name . DIRECTORY_SEPARATOR;
         if (class_exists('ZipArchive')) {
             $zip = new ZipArchive;
@@ -508,17 +508,17 @@ class Service extends \think\Service
      */
     public static function refresh()
     {
-        //刷新addons.js
-        $addons = get_addon_list();
+        //刷新module.js
+        $module = get_addon_list();
         $bootstrapArr = [];
-        foreach ($addons as $name => $addon) {
+        foreach ($module as $name => $addon) {
             $bootstrapFile = ADDON_PATH . $name . DIRECTORY_SEPARATOR . 'bootstrap.js';
             if ($addon['state'] && is_file($bootstrapFile)) {
                 $bootstrapArr[] = file_get_contents($bootstrapFile);
             }
         }
-        $addonsFile = root_path() . str_replace("/", DIRECTORY_SEPARATOR, "assets/js/addons.js");
-        if ($handle = fopen($addonsFile, 'w')) {
+        $moduleFile = root_path() . str_replace("/", DIRECTORY_SEPARATOR, "assets/js/module.js");
+        if ($handle = fopen($moduleFile, 'w')) {
             $tpl = <<<EOD
 define([], function () {
     {__JS__}
@@ -527,17 +527,17 @@ EOD;
             fwrite($handle, str_replace("{__JS__}", implode("\n", $bootstrapArr), $tpl));
             fclose($handle);
         } else {
-            throw new Exception("addons.js文件没有写入权限");
+            throw new Exception("module.js文件没有写入权限");
         }
 
-        $file = APP_PATH() . 'extra' . DIRECTORY_SEPARATOR . 'addons.php';
+        $file = APP_PATH() . 'extra' . DIRECTORY_SEPARATOR . 'module.php';
 
         $config = get_addon_autoload_config(true);
         if ($config['autoload'])
             return;
 
         if (!is_really_writable($file)) {
-            throw new Exception("addons.php文件没有写入权限");
+            throw new Exception("module.php文件没有写入权限");
         }
 
         if ($handle = fopen($file, 'w')) {

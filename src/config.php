@@ -1,6 +1,6 @@
 <?php
 // +----------------------------------------------------------------------
-// | thinkphp5 Addons [ WE CAN DO IT JUST THINK IT ]
+// | thinkphp6 Module [ WE CAN DO IT JUST THINK IT ]
 // +----------------------------------------------------------------------
 // | Copyright (c) 2016 http://www.zzstudio.net All rights reserved.
 // +----------------------------------------------------------------------

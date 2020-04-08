@@ -46,7 +46,7 @@ class Module
         $this->app = $app;
         $this->request = $app->request;
         $this->name = $this->getName();
-        $this->addon_path = $app->getRootPath() . 'addons'. DIRECTORY_SEPARATOR . $this->name . DIRECTORY_SEPARATOR;
+        $this->addon_path = $app->getRootPath() . 'module'. DIRECTORY_SEPARATOR . $this->name . DIRECTORY_SEPARATOR;
         $this->addon_config = "addon_{$this->name}_config";
         $this->addon_info = "addon_{$this->name}_info";
 
@@ -103,7 +103,7 @@ class Module
      */
     public function getDefaultDriver()
     {
-        return $this->getConfig('addons');
+        return $this->getConfig('module');
     }
 
     /**
@@ -159,10 +159,10 @@ class Module
         // 文件属性
         $info = $this->info ?? [];
         // 文件配置
-        $info_file = addons_type($this->addon_path);
+        $info_file = module_type($this->addon_path);
         if (is_file($info_file)) {
             $_info = parse_ini_file($info_file, true, INI_SCANNER_TYPED) ?: [];
-            $_info['url'] = addons_url();
+            $_info['url'] = module_url();
             $info = array_merge($_info, $info);
         }
         Config::set($info, $this->addon_info);
@@ -322,8 +322,8 @@ class Module
             return null;
         }
         //$this->view->layout(false);
-        $addons =$this->getInfo() ;
-        $this->assign(['params' => $params,'addons' => $addons]);
+        $module =$this->getInfo() ;
+        $this->assign(['params' => $params,'module' => $module]);
         return $this->fetch('/dashboard');
     }
 

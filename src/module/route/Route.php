@@ -52,7 +52,7 @@ class Route
             $module='admin';
         }
 
-        Event::trigger('addons_begin', $request);
+        Event::trigger('module_begin', $request);
         $controller?null:$controller='index';
         $action?null:$action='index';
 
@@ -76,9 +76,9 @@ class Route
         // 监听addon_module_init
         Event::trigger('addon_module_init', $request);
         if ($module||$backend[0]==Config::get('easyadmin.app_url_prefix')){
-            $class = get_addons_class($addon.'.'.$module=$module?:$module='index', 'controller', $controller);
+            $class = get_module_class($addon.'.'.$module=$module?:$module='index', 'controller', $controller);
         }else{
-            $class = get_addons_class($addon, 'controller', $controller);
+            $class = get_module_class($addon, 'controller', $controller);
         }
         if (!$class) {
             throw new HttpException(404, lang('addon controller %s not found', [Str::studly($controller)]));
@@ -86,7 +86,7 @@ class Route
 
         // 重写视图基础路径
         $config = Config::get('view');
-        $config['view_path'] = $app->addons->getAddonsPath() . $addon . DIRECTORY_SEPARATOR . 'view' . DIRECTORY_SEPARATOR;
+        $config['view_path'] = $app->module->getModulePath() . $addon . DIRECTORY_SEPARATOR . 'view' . DIRECTORY_SEPARATOR;
         Config::set($config, 'view');
 
         // 生成控制器对象
@@ -104,7 +104,7 @@ class Route
             // 操作不存在
             throw new HttpException(404, lang('addon action %s not found', [get_class($instance).'->'.$action.'()']));
         }
-        Event::trigger('addons_action_begin', $call);
+        Event::trigger('module_action_begin', $call);
 
         return call_user_func_array($call, $vars);
     }
